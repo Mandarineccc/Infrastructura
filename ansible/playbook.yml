@@ -1,0 +1,14 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Установить Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Запустить и включить Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: true

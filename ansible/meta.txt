@@ -1,0 +1,15 @@
+#cloud-config
+users:
+  - name: ubuntu
+    groups: sudo
+    shell: /bin/bash
+    sudo: 'ALL=(ALL) NOPASSWD:ALL'
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJrY+6qRDepDSdiNoh/jyHBYoP1ydpeipBtmrROENgiZTt612YPb+FCWlxZCvvI8RSCBUSi4qGOcKypbqtFQxFSrgrXtx6EBbhI6Cws8UlLbGRCKj7NT7PaA6iLi/SDm13+V5xvb2XzThkFY7nodsDl0y+egizq8bJ9AClTQK/9/hkgmZ78gvCEnqt4+SIv7FjXiqnBjvGvbukRq2bnbi8yAcU8CFyuXj7zEO8e/9ATr2MCpvTaUgd1qkvaCvAM3kUF8osYd5lHECUPTATFdLiCC4vBowgs2p+Hs6RFOKmBu3iuVEh+d6HeTwzGBevCIe5uz972Ypdb/54wrqJLp9/ test@test # Замените на ваш SSH-ключ!
+
+runcmd:
+  - apt-get update
+  - apt-get install -y nginx
+  - systemctl start nginx
+  - systemctl enable nginx
+  - echo "Hello, world!" > /var/www/html/index.html  # Простейшая проверка

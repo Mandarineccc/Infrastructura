@@ -1,0 +1,27 @@
+---
+- name: Install and configure Zabbix Server
+  hosts: zabbix
+  become: yes
+  tasks:
+    - name: Install Zabbix Server, frontend and DB
+      apt:
+        name:
+          - zabbix-server-mysql
+          - zabbix-frontend-php
+          - zabbix-apache-conf
+          - zabbix-sql-scripts
+          - zabbix-agent
+        state: present
+        update_cache: yes
+
+    - name: Ensure Zabbix Server is enabled and started
+      service:
+        name: zabbix-server
+        state: started
+        enabled: true
+
+    - name: Ensure Zabbix Agent is enabled and started
+      service:
+        name: zabbix-agent
+        state: started
+        enabled: true

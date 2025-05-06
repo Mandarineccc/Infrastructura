@@ -1,0 +1,2 @@
+- import_playbook: zabbix_server.yml
+- import_playbook: zabbix_agent.yml
