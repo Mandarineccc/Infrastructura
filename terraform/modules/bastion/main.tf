@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    yandex = {
-      source  = "yandex-cloud/yandex"
-      version = "0.140.1"
-    }
-  }
-}
-
 resource "yandex_compute_instance" "bastion" {
   name        = "bastion"
   platform_id = var.platform_id
@@ -25,14 +16,14 @@ resource "yandex_compute_instance" "bastion" {
   }
 
   network_interface {
-    subnet_id      = var.subnet_id
-    nat            = true
-    nat_ip_address = null
-    security_group_ids = [var.sg_id]
+    subnet_id           = var.subnet_id
+    nat                 = true
+    nat_ip_address      = null
+    security_group_ids  = [var.sg_id]
   }
-
 
   metadata = {
-    ssh-keys = "ubuntu:${file("~/.ssh/id_rsa.pub")}"
+    ssh-keys = "ubuntu:${file(var.ssh_public_key_path)}"
   }
 }
+

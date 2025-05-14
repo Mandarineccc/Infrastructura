@@ -1,5 +1,5 @@
 variable "platform_id" {
-  description = "Платформа для всех виртуальных машин"
+  description = "Platform for VM"
   type        = string
 }
 
@@ -46,5 +46,10 @@ variable "zone_2" {
 
 variable "zone_3" {
   description = "Zone for public subnet"
+  type        = string
+}
+
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key for VM access"
   type        = string
 }

@@ -31,12 +31,13 @@ resource "yandex_compute_instance" "kibana" {
   }
 
   metadata = {
-    user-data = <<-EOT
-      #cloud-config
-      packages:
-        - kibana
-      runcmd:
-        - systemctl enable kibana --now
-    EOT
-  }
+  ssh-keys  = "ubuntu:${file(var.ssh_public_key_path)}"
+  user-data = <<-EOT
+    #cloud-config
+    packages:
+      - kibana
+    runcmd:
+      - systemctl enable kibana --now
+  EOT
+  } 
 }

@@ -22,3 +22,8 @@ variable "sg_id" {
   description = "Security group ID for bastion host"  # Однострочное описание
   type        = string
 }
+
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key for access"
+  type        = string
+}

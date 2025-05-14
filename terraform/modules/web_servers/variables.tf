@@ -27,3 +27,8 @@ variable "zone_2" {
   description = "Second availability zone"
   type        = string
 }
+
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key for access"
+  type        = string
+}

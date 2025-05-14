@@ -19,5 +19,5 @@ output "bastion_public_ip" {
 }
 
 output "web_sg_id" {
-  value = yandex_vpc_security_group.web.id
+  value = module.security_groups.web_sg_id
 }
