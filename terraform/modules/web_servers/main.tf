@@ -1,11 +1,3 @@
-terraform {
-  required_providers {
-    yandex = {
-      source  = "yandex-cloud/yandex"
-    }
-  }
-}
-
 resource "yandex_compute_instance" "web_server_1" {
   name     = "web1"
   hostname = "web1"

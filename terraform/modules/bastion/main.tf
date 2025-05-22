@@ -26,4 +26,3 @@ resource "yandex_compute_instance" "bastion" {
     ssh-keys = "ubuntu:${file(var.ssh_public_key_path)}"
   }
 }
-

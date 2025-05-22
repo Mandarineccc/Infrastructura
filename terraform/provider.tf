@@ -1,13 +1,9 @@
-terraform {
-  required_version = ">= 0.13"
-
-  required_providers {
-    yandex = {
-      source  = "yandex-cloud/yandex"
-      version = "0.140.1"
-    }
-  }
+provider "yandex" {
+  # твоя конфигурация
 }
+
+provider "null" {}
+
 
 provider "yandex" {
   service_account_key_file = var.sa_key_path

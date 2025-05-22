@@ -1,10 +1,5 @@
 terraform {
-  required_providers {
-    yandex = {
-      source  = "yandex-cloud/yandex"
-    }
   }
-}
 
 resource "yandex_compute_instance" "elasticsearch" {
   name        = "elasticsearch-server"
@@ -42,4 +37,3 @@ resource "yandex_compute_instance" "elasticsearch" {
     EOT
   }
 }
-
