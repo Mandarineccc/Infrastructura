@@ -1,5 +1,5 @@
 variable "subnet_id" {
-  description = "Subnet ID where ALB will be placed"
+  description = "Subnet ID to use for ALB"
   type        = string
 }
 

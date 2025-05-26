@@ -3,7 +3,7 @@ output "kibana_public_ip" {
 }
 
 output "balancer_public_ip" {
-  value = module.load_balancer.public_ip
+  value = module.load_balancer.alb_ip
 }
 
 output "web_servers_private_ips" {

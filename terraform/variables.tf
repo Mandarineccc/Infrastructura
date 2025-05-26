@@ -1,3 +1,8 @@
+variable "gitlab_token" {
+  description = "value of gitlab token"
+  type        = string
+}
+
 variable "platform_id" {
   description = "Platform for VM"
   type        = string

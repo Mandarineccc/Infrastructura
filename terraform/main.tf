@@ -1,33 +1,45 @@
 module "vpc" {
   source       = "./modules/vpc"
   network_name = "my-network"
+  providers = {
+    yandex = yandex
+  }
 }
 
 module "nat_gateway" {
   source     = "./modules/nat_gateway"
   network_id = module.vpc.network_id
   prefix     = "prod"
+  providers = {
+    yandex = yandex
+  }
 }
 
 module "subnets" {
   source         = "./modules/subnets"
   network_id     = module.vpc.network_id
-  route_table_id = module.nat_gateway.route_table_id # Передаем ID таблицы маршрутизации
+  route_table_id = module.nat_gateway.route_table_id
   zone_1         = "ru-central1-a"
   zone_2         = "ru-central1-b"
   zone_3         = "ru-central1-c"
   private_cidr   = "10.0.1.0/24"
   public_cidr    = "10.0.2.0/24"
+  providers = {
+    yandex = yandex
+  }
 }
 
 module "bastion" {
   source              = "./modules/bastion"
   platform_id         = var.platform_id
-  subnet_id           = module.subnets.public_subnet_id # Исправлено имя output
+  subnet_id           = module.subnets.public_subnet_id
   zone                = var.zone_3
   image_id            = "fd8tvc3529h2cpjvpkr5"
   sg_id               = yandex_vpc_security_group.temp_bastion_sg.id
   ssh_public_key_path = var.ssh_public_key_path
+  providers = {
+    yandex = yandex
+  }
 }
 
 resource "yandex_vpc_security_group" "temp_bastion_sg" {
@@ -37,7 +49,7 @@ resource "yandex_vpc_security_group" "temp_bastion_sg" {
   ingress {
     protocol       = "TCP"
     port           = 22
-    v4_cidr_blocks = ["0.0.0.0/0"] # Временное правило
+    v4_cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -46,6 +58,9 @@ module "security_groups" {
   network_id   = module.vpc.network_id
   bastion_ip   = module.bastion.bastion_public_ip
   private_cidr = module.subnets.private_cidr
+  providers = {
+    yandex = yandex
+  }
 }
 
 resource "yandex_vpc_security_group_rule" "bastion_final_rule" {
@@ -56,7 +71,6 @@ resource "yandex_vpc_security_group_rule" "bastion_final_rule" {
   v4_cidr_blocks         = ["${module.bastion.bastion_public_ip}/32"]
 }
 
-# Удаляем временную security group (опционально)
 resource "null_resource" "cleanup_temp_sg" {
   depends_on = [module.security_groups]
 
@@ -68,21 +82,27 @@ resource "null_resource" "cleanup_temp_sg" {
 module "kibana" {
   source              = "./modules/kibana"
   platform_id         = var.platform_id
-  subnet_id           = module.subnets.public_subnet_id # Исправлено имя output
+  subnet_id           = module.subnets.public_subnet_id
   zone                = var.zone_3
   image_id            = "fd8tvc3529h2cpjvpkr5"
-  sg_id               = module.security_groups.kibana_sg_id # Добавлена security group
+  sg_id               = module.security_groups.kibana_sg_id
   ssh_public_key_path = var.ssh_public_key_path
+  providers = {
+    yandex = yandex
+  }
 }
 
 module "elasticsearch" {
   source              = "./modules/elasticsearch"
   platform_id         = var.platform_id
-  subnet_id           = module.subnets.private_subnet_a_id # Исправлено имя output
+  subnet_id           = module.subnets.private_subnet_a_id
   zone                = var.zone_1
   image_id            = "fd8tvc3529h2cpjvpkr5"
-  sg_id               = module.security_groups.elasticsearch_sg_id # Добавлена security group
+  sg_id               = module.security_groups.elasticsearch_sg_id
   ssh_public_key_path = var.ssh_public_key_path
+  providers = {
+    yandex = yandex
+  }
 }
 
 module "web_servers" {
@@ -93,12 +113,14 @@ module "web_servers" {
     zone_2 = module.subnets.private_subnet_b_id
   }
   image_id            = "fd8tvc3529h2cpjvpkr5"
-  sg_id               = module.security_groups.web_sg_id # Добавлена security group
+  sg_id               = module.security_groups.web_sg_id
   zone_1              = var.zone_1
   zone_2              = var.zone_2
   ssh_public_key_path = var.ssh_public_key_path
+  providers = {
+    yandex = yandex
+  }
 }
-
 
 module "load_balancer" {
   source = "./modules/load_balancer"
@@ -110,6 +132,9 @@ module "load_balancer" {
   network_id = module.vpc.network_id
   zone       = var.zone_3
   web_sg     = module.security_groups.web_sg_id
+  providers = {
+    yandex = yandex
+  }
 }
 
 module "zabbix_server" {
@@ -120,4 +145,7 @@ module "zabbix_server" {
   subnet_id           = module.subnets.public_subnet_id
   sg_id               = module.security_groups.zabbix_sg_id
   ssh_public_key_path = var.ssh_public_key_path
+  providers = {
+    yandex = yandex
+  }
 }

@@ -45,8 +45,11 @@ resource "yandex_alb_virtual_host" "web_vhost" {
 
   route {
     name = "default-route"
+
     http_route {
-      http_backend_group_id = yandex_alb_backend_group.web_bg.id
+      http_route_action {
+        backend_group_id = yandex_alb_backend_group.web_bg.id
+      }
 
       http_match {
         path {
@@ -63,22 +66,23 @@ resource "yandex_alb_load_balancer" "web_alb" {
   security_group_ids = [var.web_sg]
 
   allocation_policy {
-    location {
-      zone_id   = var.zone
-      subnet_id = var.subnet_id
-    }
+  location {
+    zone_id   = var.zone
+    subnet_id = var.subnet_id
   }
+}
+
 
   listener {
     name = "http-listener"
     endpoint {
       address {
-        external_ipv4_address {
-          zone_id = var.zone
-        }
+        external_ipv4_address {}  # ⬅️ zone_id удалён
       }
       ports = [80]
     }
-    protocol = "HTTP"
+
+    http {}  # ⬅️ добавлен http-блок вместо protocol
   }
 }
+
