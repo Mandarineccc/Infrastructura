@@ -1,5 +1,6 @@
 resource "yandex_compute_instance" "bastion" {
   name        = "bastion"
+  hostname = "bastion"
   platform_id = var.platform_id
   zone        = var.zone
 
@@ -18,7 +19,6 @@ resource "yandex_compute_instance" "bastion" {
   network_interface {
     subnet_id           = var.subnet_id
     nat                 = true
-    nat_ip_address      = null
     security_group_ids  = [var.sg_id]
   }
 

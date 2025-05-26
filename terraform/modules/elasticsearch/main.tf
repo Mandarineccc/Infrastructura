@@ -3,6 +3,7 @@ terraform {
 
 resource "yandex_compute_instance" "elasticsearch" {
   name        = "elasticsearch-server"
+  hostname    = "elasticsearch"
   platform_id = var.platform_id
   zone        = var.zone
 

@@ -1,3 +1,10 @@
 key.json
 terraform.tfstate
 terraform.tfstate.*
+# Не отслеживать файлы с переменными
+terraform.tfvars
+*.tfvars
+*.tfvars.local
+.terraform/
+.terraform.lock.hcl
+.terraform/

@@ -3,6 +3,7 @@ terraform {
 
 resource "yandex_compute_instance" "kibana" {
   name        = "kibana-server"
+  hostname    = "kibana-server"
   platform_id = var.platform_id
   zone        = var.zone  # Исправлено с zone_1 на zone (как объявлено в variables.tf)
 
