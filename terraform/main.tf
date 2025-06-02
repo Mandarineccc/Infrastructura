@@ -16,17 +16,17 @@ module "nat_gateway" {
 }
 
 module "subnets" {
-  source           = "./modules/subnets"
-  network_id       = module.vpc.network_id
-  route_table_id   = module.nat_gateway.route_table_id
+  source         = "./modules/subnets"
+  network_id     = module.vpc.network_id
+  route_table_id = module.nat_gateway.route_table_id
 
-  zone_1           = "ru-central1-a"
-  zone_2           = "ru-central1-b"
-  zone_3           = "ru-central1-a"
+  zone_1 = "ru-central1-a"
+  zone_2 = "ru-central1-b"
+  zone_3 = "ru-central1-a"
 
-  private_cidr_a   = "10.0.1.0/24"
-  private_cidr_b   = "10.0.2.0/24"
-  public_cidr      = "10.0.3.0/24"
+  private_cidr_a = "10.0.1.0/24"
+  private_cidr_b = "10.0.2.0/24"
+  public_cidr    = "10.0.3.0/24"
 
   providers = {
     yandex = yandex
@@ -88,7 +88,7 @@ module "kibana" {
   source              = "./modules/kibana"
   platform_id         = var.platform_id
   subnet_id           = module.subnets.public_subnet_id
-  zone                = "ru-central1-b"
+  zone                = "ru-central1-a"
   image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = module.security_groups.kibana_sg_id
   ssh_public_key_path = var.ssh_public_key_path
@@ -133,10 +133,12 @@ module "load_balancer" {
     module.web_servers.web_server_1_ip,
     module.web_servers.web_server_2_ip
   ]
-  subnet_id  = module.subnets.public_subnet_id
-  network_id = module.vpc.network_id
-  zone       = "ru-central1-a"
-  web_sg     = module.security_groups.web_sg_id
+  subnet_id           = module.subnets.public_subnet_id
+  network_id          = module.vpc.network_id
+  zone                = "ru-central1-a"
+  web_sg              = module.security_groups.web_sg_id
+  private_subnet_a_id = module.subnets.private_subnet_a_id
+  private_subnet_b_id = module.subnets.private_subnet_b_id
   providers = {
     yandex = yandex
   }
@@ -156,43 +158,43 @@ module "zabbix_server" {
 }
 
 module "snapshot_bastion" {
-  source         = "./modules/snapshot"
-  schedule_name  = "bastion-snapshot"
-  disk_ids       = [module.bastion.disk_id]
-  instance_name  = "bastion"
+  source        = "./modules/snapshot"
+  schedule_name = "bastion-snapshot"
+  disk_ids      = [module.bastion.disk_id]
+  instance_name = "bastion"
 }
 
 module "snapshot_elasticsearch" {
-  source         = "./modules/snapshot"
-  schedule_name  = "elasticsearch-snapshot"
-  disk_ids       = [module.elasticsearch.disk_id]
-  instance_name  = "elasticsearch"
+  source        = "./modules/snapshot"
+  schedule_name = "elasticsearch-snapshot"
+  disk_ids      = [module.elasticsearch.disk_id]
+  instance_name = "elasticsearch"
 }
 
 module "snapshot_kibana" {
-  source         = "./modules/snapshot"
-  schedule_name  = "kibana-snapshot"
-  disk_ids       = [module.kibana.disk_id]
-  instance_name  = "kibana"
+  source        = "./modules/snapshot"
+  schedule_name = "kibana-snapshot"
+  disk_ids      = [module.kibana.disk_id]
+  instance_name = "kibana"
 }
 
 module "snapshot_web1" {
-  source         = "./modules/snapshot"
-  schedule_name  = "web1-snapshot"
-  disk_ids       = [module.web_servers.web_server_1_disk_id]
-  instance_name  = "web1"
+  source        = "./modules/snapshot"
+  schedule_name = "web1-snapshot"
+  disk_ids      = [module.web_servers.web_server_1_disk_id]
+  instance_name = "web1"
 }
 
 module "snapshot_web2" {
-  source         = "./modules/snapshot"
-  schedule_name  = "web2-snapshot"
-  disk_ids       = [module.web_servers.web_server_2_disk_id]
-  instance_name  = "web2"
+  source        = "./modules/snapshot"
+  schedule_name = "web2-snapshot"
+  disk_ids      = [module.web_servers.web_server_2_disk_id]
+  instance_name = "web2"
 }
 
 module "snapshot_zabbix" {
-  source         = "./modules/snapshot"
-  schedule_name  = "zabbix-snapshot"
-  disk_ids       = [module.zabbix_server.disk_id]
-  instance_name  = "zabbix"
+  source        = "./modules/snapshot"
+  schedule_name = "zabbix-snapshot"
+  disk_ids      = [module.zabbix_server.disk_id]
+  instance_name = "zabbix"
 }

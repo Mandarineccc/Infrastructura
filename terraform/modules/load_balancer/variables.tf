@@ -22,3 +22,13 @@ variable "zone" {
   description = "Zone where ALB will be created"
   type        = string
 }
+
+variable "private_subnet_a_id" {
+  description = "ID приватной подсети A"
+  type        = string
+}
+
+variable "private_subnet_b_id" {
+  description = "ID приватной подсети B"
+  type        = string
+}

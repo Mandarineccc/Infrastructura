@@ -11,7 +11,7 @@ resource "yandex_vpc_security_group" "bastion_sg" {
   ingress {
     protocol = "tcp"
     port     = 22
-    v4_cidr_blocks = [var.bastion_ip]
+    v4_cidr_blocks = ["${var.bastion_ip}/32"]
   }
 }
 

@@ -6,12 +6,12 @@ resource "yandex_alb_target_group" "web_tg" {
 
   target {
     ip_address = var.target_ips[0]
-    subnet_id  = var.subnet_id
+    subnet_id  = var.private_subnet_a_id
   }
 
   target {
     ip_address = var.target_ips[1]
-    subnet_id  = var.subnet_id
+    subnet_id  = var.private_subnet_b_id
   }
 }
 
@@ -66,23 +66,24 @@ resource "yandex_alb_load_balancer" "web_alb" {
   security_group_ids = [var.web_sg]
 
   allocation_policy {
-  location {
-    zone_id   = var.zone
-    subnet_id = var.subnet_id
+    location {
+      zone_id   = var.zone
+      subnet_id = var.subnet_id
+    }
   }
-}
-
 
   listener {
     name = "http-listener"
     endpoint {
       address {
-        external_ipv4_address {}  # ⬅️ zone_id удалён
+        external_ipv4_address {}
       }
       ports = [80]
     }
 
-    http {}  # ⬅️ добавлен http-блок вместо protocol
+    http {}
   }
 }
+
+
 
