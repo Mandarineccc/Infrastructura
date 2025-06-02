@@ -1,28 +1,51 @@
 #!/usr/bin/env python3
-import json
 import subprocess
+import json
+import sys
 
-def output(terraform_output_name):
-    """
-    Функция для получения значения output из Terraform
-    """
-    command = ["terraform", "output", "-json", terraform_output_name]
-    result = subprocess.run(command, stdout=subprocess.PIPE)
-    return json.loads(result.stdout)
+def output(var):
+    try:
+        result = subprocess.run(
+            ["terraform", "output", "-raw", var],
+            cwd="../terraform",
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return ""  # безопасный фолбэк
 
-def get_infrastructure():
-    lb_ip = output('load_balancer_ip')
-    web_server_1_ip = output('web_server_1_ip')
-    web_server_2_ip = output('web_server_2_ip')
-    zabbix_server_ip = output('zabbix_server_ip')
-
+def get_inventory():
     return {
-        'web_servers': [web_server_1_ip, web_server_2_ip],
-        'zabbix_server': [zabbix_server_ip],
-        'load_balancer_ip': lb_ip
+        "webservers": {
+            "hosts": [
+                "web1.ru-central1.internal",
+                "web2.ru-central1.internal"
+            ]
+        },
+        "zabbix": {
+            "hosts": ["zabbix.ru-central1.internal"]
+        },
+        "elasticsearch": {
+            "hosts": ["elasticsearch.ru-central1.internal"]
+        },
+        "kibana": {
+            "hosts": ["kibana-server.ru-central1.internal"]
+        },
+        "bastion": {
+            "hosts": ["bastion.ru-central1.internal"]
+        },
+        "_meta": {
+            "hostvars": {}
+        }
     }
 
-if __name__ == '__main__':
-    # Пример использования функции
-    infrastructure = get_infrastructure()
-    print(infrastructure)
+if __name__ == "__main__":
+    if "--list" in sys.argv:
+        print(json.dumps(get_inventory(), indent=2))
+    elif "--host" in sys.argv:
+        print(json.dumps({}))  # not used
+    else:
+        print("Usage: --list or --host <hostname>", file=sys.stderr)
+        sys.exit(1)

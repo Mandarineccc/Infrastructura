@@ -9,3 +9,7 @@ output "zabbix_internal_ip" {
 output "zabbix_instance_id" {
   value = yandex_compute_instance.zabbix.id
 }
+
+output "disk_id" {
+  value = yandex_compute_instance.zabbix.boot_disk[0].disk_id
+}

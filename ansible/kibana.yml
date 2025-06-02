@@ -1,0 +1,22 @@
+- name: Установка Kibana
+  hosts: kibana
+  become: true
+
+  tasks:
+    - name: Установка Kibana
+      apt:
+        name: kibana
+        state: present
+        update_cache: true
+
+    - name: Копирование конфига Kibana
+      template:
+        src: kibana.yml.j2
+        dest: /etc/kibana/kibana.yml
+        mode: "0644"
+
+    - name: Включить и запустить Kibana
+      service:
+        name: kibana
+        state: started
+        enabled: true

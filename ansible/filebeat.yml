@@ -1,0 +1,33 @@
+- name: Установка Filebeat
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Установка GPG-ключа Elastic
+      apt_key:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        state: present
+
+    - name: Добавление репозитория Elastic
+      apt_repository:
+        repo: 'deb https://artifacts.elastic.co/packages/7.x/apt stable main'
+        state: present
+
+    - name: Установка Filebeat
+      apt:
+        name: filebeat
+        state: present
+        update_cache: true
+
+    - name: Копирование конфига Filebeat
+      template:
+        src: filebeat.yml.j2
+        dest: /etc/filebeat/filebeat.yml
+        mode: "0644"
+      notify: Перезапуск Filebeat
+
+  handlers:
+    - name: Перезапуск Filebeat
+      service:
+        name: filebeat
+        state: restarted

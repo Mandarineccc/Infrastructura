@@ -1,0 +1,34 @@
+- name: Установка Elasticsearch
+  hosts: elasticsearch
+  become: true
+
+  tasks:
+    - name: Установка зависимостей
+      apt:
+        name:
+          - apt-transport-https
+          - openjdk-11-jdk
+        state: present
+        update_cache: true
+
+    - name: Добавление GPG-ключа Elastic
+      apt_key:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        state: present
+
+    - name: Добавление репозитория Elasticsearch
+      apt_repository:
+        repo: 'deb https://artifacts.elastic.co/packages/7.x/apt stable main'
+        state: present
+
+    - name: Установка Elasticsearch
+      apt:
+        name: elasticsearch
+        state: present
+        update_cache: true
+
+    - name: Включение и запуск Elasticsearch
+      service:
+        name: elasticsearch
+        state: started
+        enabled: true

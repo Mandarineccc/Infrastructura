@@ -149,3 +149,45 @@ module "zabbix_server" {
     yandex = yandex
   }
 }
+
+module "snapshot_bastion" {
+  source         = "./modules/snapshot"
+  schedule_name  = "bastion-snapshot"
+  disk_ids       = [module.bastion.disk_id]
+  instance_name  = "bastion"
+}
+
+module "snapshot_elasticsearch" {
+  source         = "./modules/snapshot"
+  schedule_name  = "elasticsearch-snapshot"
+  disk_ids       = [module.elasticsearch.disk_id]
+  instance_name  = "elasticsearch"
+}
+
+module "snapshot_kibana" {
+  source         = "./modules/snapshot"
+  schedule_name  = "kibana-snapshot"
+  disk_ids       = [module.kibana.disk_id]
+  instance_name  = "kibana"
+}
+
+module "snapshot_web1" {
+  source         = "./modules/snapshot"
+  schedule_name  = "web1-snapshot"
+  disk_ids       = [module.web_servers.web_server_1_disk_id]
+  instance_name  = "web1"
+}
+
+module "snapshot_web2" {
+  source         = "./modules/snapshot"
+  schedule_name  = "web2-snapshot"
+  disk_ids       = [module.web_servers.web_server_2_disk_id]
+  instance_name  = "web2"
+}
+
+module "snapshot_zabbix" {
+  source         = "./modules/snapshot"
+  schedule_name  = "zabbix-snapshot"
+  disk_ids       = [module.zabbix_server.disk_id]
+  instance_name  = "zabbix"
+}

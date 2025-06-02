@@ -1,0 +1,22 @@
+- name: Установка и настройка nginx
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Установка nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    - name: Копировать статические файлы сайта
+      copy:
+        src: my_static_site/
+        dest: /var/www/html/
+        mode: "0644"
+
+    - name: Обеспечить автозапуск и запуск nginx
+      service:
+        name: nginx
+        enabled: true
+        state: started

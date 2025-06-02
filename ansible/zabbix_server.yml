@@ -1,27 +1,27 @@
----
-- name: Install and configure Zabbix Server
+- name: Установка Zabbix сервера
   hosts: zabbix
-  become: yes
+  become: true
+
   tasks:
-    - name: Install Zabbix Server, frontend and DB
+    - name: Установка зависимостей
       apt:
         name:
           - zabbix-server-mysql
           - zabbix-frontend-php
           - zabbix-apache-conf
           - zabbix-sql-scripts
-          - zabbix-agent
+          - mariadb-server
         state: present
-        update_cache: yes
+        update_cache: true
 
-    - name: Ensure Zabbix Server is enabled and started
+    - name: Убедиться, что MariaDB работает
       service:
-        name: zabbix-server
+        name: mariadb
         state: started
         enabled: true
 
-    - name: Ensure Zabbix Agent is enabled and started
+    - name: Убедиться, что Zabbix сервер работает
       service:
-        name: zabbix-agent
+        name: zabbix-server
         state: started
         enabled: true

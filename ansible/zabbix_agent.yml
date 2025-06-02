@@ -1,34 +1,23 @@
----
-- name: Install Zabbix Agent on all VMs
+- name: Установка Zabbix Agent
   hosts: all
   become: true
 
-  vars:
-    zabbix_server_ip: "{{ hostvars['zabbix-server']['ansible_host'] | default('192.168.10.32') }}"
-
   tasks:
-    - name: Install Zabbix repo
-      apt:
-        deb: https://repo.zabbix.com/zabbix/6.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.0-4+ubuntu22.04_all.deb
-        state: present
-
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-
-    - name: Install Zabbix Agent
+    - name: Установка пакета Zabbix Agent
       apt:
         name: zabbix-agent
         state: present
+        update_cache: true
 
-    - name: Deploy agent config
+    - name: Копирование конфигурации Zabbix Agent
       template:
         src: templates/zabbix_agentd.conf.j2
         dest: /etc/zabbix/zabbix_agentd.conf
-        mode: 0644
+        mode: "0644"
+      notify: Перезапуск агента
 
-    - name: Enable and start agent
+  handlers:
+    - name: Перезапуск агента
       service:
         name: zabbix-agent
-        enabled: true
-        state: started
+        state: restarted

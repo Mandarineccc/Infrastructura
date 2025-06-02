@@ -5,3 +5,7 @@ output "bastion_public_ip" {
 output "bastion_instance_id" {
   value = yandex_compute_instance.bastion.id
 }
+
+output "disk_id" {
+  value = yandex_compute_instance.bastion.boot_disk[0].disk_id
+}
