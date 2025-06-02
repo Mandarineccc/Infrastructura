@@ -10,6 +10,10 @@ output "public_subnet_id" {
   value = yandex_vpc_subnet.public.id
 }
 
-output "private_cidr" {
-  value = var.private_cidr
+output "private_cidr_a" {
+  value = var.private_cidr_a
+}
+
+output "private_cidr_b" {
+  value = var.private_cidr_b
 }

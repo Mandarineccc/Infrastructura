@@ -43,7 +43,7 @@ resource "yandex_vpc_security_group" "nat_sg" {
 
   ingress {
     protocol       = "ANY"
-    v4_cidr_blocks = [var.private_cidr]  # Разрешаем трафик только из приватной сети
+    v4_cidr_blocks = [var.private_cidr_a, var.private_cidr_b]  # Разрешаем трафик только из приватной сети
   }
 }
 

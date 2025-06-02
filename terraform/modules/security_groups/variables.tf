@@ -8,7 +8,13 @@ variable "bastion_ip" {
   type        = string
 }
 
-variable "private_cidr" {
-  description = "CIDR приватной сети"
+variable "private_cidr_a" {
+  description = "CIDR for private subnet A"
   type        = string
 }
+
+variable "private_cidr_b" {
+  description = "CIDR for private subnet B"
+  type        = string
+}
+

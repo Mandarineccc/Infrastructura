@@ -16,14 +16,18 @@ module "nat_gateway" {
 }
 
 module "subnets" {
-  source         = "./modules/subnets"
-  network_id     = module.vpc.network_id
-  route_table_id = module.nat_gateway.route_table_id
-  zone_1         = "ru-central1-a"
-  zone_2         = "ru-central1-b"
-  zone_3         = "ru-central1-c"
-  private_cidr   = "10.0.1.0/24"
-  public_cidr    = "10.0.2.0/24"
+  source           = "./modules/subnets"
+  network_id       = module.vpc.network_id
+  route_table_id   = module.nat_gateway.route_table_id
+
+  zone_1           = "ru-central1-a"
+  zone_2           = "ru-central1-b"
+  zone_3           = "ru-central1-a"
+
+  private_cidr_a   = "10.0.1.0/24"
+  private_cidr_b   = "10.0.2.0/24"
+  public_cidr      = "10.0.3.0/24"
+
   providers = {
     yandex = yandex
   }
@@ -33,8 +37,8 @@ module "bastion" {
   source              = "./modules/bastion"
   platform_id         = var.platform_id
   subnet_id           = module.subnets.public_subnet_id
-  zone                = var.zone_3
-  image_id            = "fd8tvc3529h2cpjvpkr5"
+  zone                = "ru-central1-a"
+  image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = yandex_vpc_security_group.temp_bastion_sg.id
   ssh_public_key_path = var.ssh_public_key_path
   providers = {
@@ -54,10 +58,11 @@ resource "yandex_vpc_security_group" "temp_bastion_sg" {
 }
 
 module "security_groups" {
-  source       = "./modules/security_groups"
-  network_id   = module.vpc.network_id
-  bastion_ip   = module.bastion.bastion_public_ip
-  private_cidr = module.subnets.private_cidr
+  source         = "./modules/security_groups"
+  network_id     = module.vpc.network_id
+  bastion_ip     = module.bastion.bastion_public_ip
+  private_cidr_a = module.subnets.private_cidr_a
+  private_cidr_b = module.subnets.private_cidr_b
   providers = {
     yandex = yandex
   }
@@ -83,8 +88,8 @@ module "kibana" {
   source              = "./modules/kibana"
   platform_id         = var.platform_id
   subnet_id           = module.subnets.public_subnet_id
-  zone                = var.zone_3
-  image_id            = "fd8tvc3529h2cpjvpkr5"
+  zone                = "ru-central1-b"
+  image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = module.security_groups.kibana_sg_id
   ssh_public_key_path = var.ssh_public_key_path
   providers = {
@@ -97,7 +102,7 @@ module "elasticsearch" {
   platform_id         = var.platform_id
   subnet_id           = module.subnets.private_subnet_a_id
   zone                = var.zone_1
-  image_id            = "fd8tvc3529h2cpjvpkr5"
+  image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = module.security_groups.elasticsearch_sg_id
   ssh_public_key_path = var.ssh_public_key_path
   providers = {
@@ -112,7 +117,7 @@ module "web_servers" {
     zone_1 = module.subnets.private_subnet_a_id,
     zone_2 = module.subnets.private_subnet_b_id
   }
-  image_id            = "fd8tvc3529h2cpjvpkr5"
+  image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = module.security_groups.web_sg_id
   zone_1              = var.zone_1
   zone_2              = var.zone_2
@@ -130,7 +135,7 @@ module "load_balancer" {
   ]
   subnet_id  = module.subnets.public_subnet_id
   network_id = module.vpc.network_id
-  zone       = var.zone_3
+  zone       = "ru-central1-a"
   web_sg     = module.security_groups.web_sg_id
   providers = {
     yandex = yandex
@@ -140,8 +145,8 @@ module "load_balancer" {
 module "zabbix_server" {
   source              = "./modules/zabbix_server"
   platform_id         = var.platform_id
-  zone                = var.zone_3
-  image_id            = "fd8tvc3529h2cpjvpkr5"
+  zone                = "ru-central1-a"
+  image_id            = "fd8oqjs5ram7b6higj34"
   subnet_id           = module.subnets.public_subnet_id
   sg_id               = module.security_groups.zabbix_sg_id
   ssh_public_key_path = var.ssh_public_key_path

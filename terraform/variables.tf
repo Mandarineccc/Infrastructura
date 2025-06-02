@@ -29,8 +29,13 @@ variable "network_name" {
   default     = "netology-network"
 }
 
-variable "private_cidr" {
-  description = "Private CIDR block"
+variable "private_cidr_a" {
+  description = "CIDR block for private subnet A"
+  type        = string
+}
+
+variable "private_cidr_b" {
+  description = "CIDR block for private subnet B"
   type        = string
 }
 
