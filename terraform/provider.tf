@@ -6,7 +6,7 @@ terraform {
     }
     yandex = {
       source  = "yandex-cloud/yandex"
-      version = ">= 0.87.0"
+      version = ">= 0.142.0"
     }
     null = {
       source  = "hashicorp/null"

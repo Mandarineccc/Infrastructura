@@ -71,16 +71,20 @@ resource "yandex_alb_load_balancer" "web_alb" {
 
   listener {
     name = "http-listener"
-
     endpoint {
       address {
         external_ipv4_address {}
       }
       ports = [80]
     }
-
-    http {}
+    
+    http {
+    handler {
+      http_router_id = yandex_alb_http_router.web_router.id
+    }
   }
+}
+    
 
   depends_on = [
     yandex_alb_http_router.web_router,
