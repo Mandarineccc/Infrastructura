@@ -51,7 +51,7 @@ resource "yandex_vpc_security_group" "temp_bastion_sg" {
   network_id = module.vpc.network_id
 
   ingress {
-    protocol       = "tcp"
+    protocol = "TCP"
     port           = 22
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
@@ -72,7 +72,7 @@ resource "yandex_vpc_security_group_rule" "bastion_final_rule" {
   security_group_binding = module.security_groups.bastion_sg_id
   direction              = "ingress"
   port                   = 22
-  protocol               = "tcp"
+  protocol = "TCP"
   v4_cidr_blocks         = ["${module.bastion.bastion_public_ip}/32"]
 }
 

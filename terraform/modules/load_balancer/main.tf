@@ -1,6 +1,3 @@
-terraform {
-  }
-
 resource "yandex_alb_target_group" "web_tg" {
   name = "web-target-group"
 
@@ -74,6 +71,7 @@ resource "yandex_alb_load_balancer" "web_alb" {
 
   listener {
     name = "http-listener"
+
     endpoint {
       address {
         external_ipv4_address {}
@@ -83,7 +81,10 @@ resource "yandex_alb_load_balancer" "web_alb" {
 
     http {}
   }
+
+  depends_on = [
+    yandex_alb_http_router.web_router,
+    yandex_alb_virtual_host.web_vhost,
+    yandex_alb_backend_group.web_bg
+  ]
 }
-
-
-
