@@ -51,7 +51,7 @@ resource "yandex_vpc_security_group" "temp_bastion_sg" {
   network_id = module.vpc.network_id
 
   ingress {
-    protocol       = "TCP"
+    protocol       = "tcp"
     port           = 22
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
@@ -76,13 +76,13 @@ resource "yandex_vpc_security_group_rule" "bastion_final_rule" {
   v4_cidr_blocks         = ["${module.bastion.bastion_public_ip}/32"]
 }
 
-resource "null_resource" "cleanup_temp_sg" {
-  depends_on = [module.security_groups]
+#resource "null_resource" "cleanup_temp_sg" {
+#   depends_on = [module.security_groups]
 
-  provisioner "local-exec" {
-    command = "yc vpc security-group delete ${yandex_vpc_security_group.temp_bastion_sg.id}"
-  }
-}
+#  provisioner "local-exec" {
+#    command = "yc vpc security-group delete ${yandex_vpc_security_group.temp_bastion_sg.id}"
+#  }
+#}
 
 module "kibana" {
   source              = "./modules/kibana"

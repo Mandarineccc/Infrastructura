@@ -21,3 +21,11 @@ output "bastion_public_ip" {
 output "web_sg_id" {
   value = module.security_groups.web_sg_id
 }
+
+output "web_server_1_ip" {
+  value = module.web_servers.web_server_1_ip
+}
+
+output "web_server_2_ip" {
+  value = module.web_servers.web_server_2_ip
+}

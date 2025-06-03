@@ -51,7 +51,7 @@ resource "yandex_vpc_security_group" "kibana" {
   name      = "kibana-sg"
   network_id = var.network_id
   ingress {
-    protocol       = "TCP"
+    protocol       = "tcp"
     port           = 5601
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
@@ -65,7 +65,7 @@ resource "yandex_vpc_security_group" "elasticsearch" {
   name      = "elasticsearch-sg"
   network_id = var.network_id
   ingress {
-    protocol       = "TCP"
+    protocol       = "tcp"
     port           = 9200
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
@@ -80,14 +80,14 @@ resource "yandex_vpc_security_group" "zabbix_sg" {
   network_id = var.network_id
 
   ingress {
-    protocol       = "TCP"
+    protocol       = "tcp"
     description    = "Zabbix frontend"
     port           = 80
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    protocol       = "TCP"
+    protocol       = "tcp"
     description    = "Zabbix server port"
     port           = 10051
     v4_cidr_blocks = ["0.0.0.0/0"]
