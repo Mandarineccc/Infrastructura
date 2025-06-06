@@ -19,17 +19,24 @@ resource "yandex_vpc_security_group" "web_sg" {
   name       = "web-sg"
   network_id = var.network_id
 
-  egress {
-    protocol       = "tcp"
-    port           = 0
-    v4_cidr_blocks = ["0.0.0.0/0"]
-  }
-
   ingress {
     protocol       = "tcp"
     port           = 80
-    v4_cidr_blocks = ["0.0.0.0/0", "198.18.235.0/24"]
-    description    = "Allow HTTP + ALB health checks"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    description    = "Allow HTTP traffic"
+  }
+
+  ingress {
+    protocol          = "tcp"
+    port              = 80
+    predefined_target = "loadbalancer_healthchecks"
+    description       = "Allow ALB health checks"
+  }
+
+  egress {
+    protocol       = "ANY"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    description    = "Allow all outbound traffic"
   }
 }
 
