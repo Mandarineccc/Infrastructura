@@ -39,7 +39,7 @@ module "bastion" {
   subnet_id           = module.subnets.public_subnet_id
   zone                = "ru-central1-a"
   image_id            = "fd8oqjs5ram7b6higj34"
-  sg_id               = yandex_vpc_security_group.temp_bastion_sg.id
+  sg_id               = module.security_groups.bastion_sg_id
   ssh_public_key_path = var.ssh_public_key_path
   providers = {
     yandex = yandex
@@ -66,6 +66,42 @@ module "security_groups" {
   providers = {
     yandex = yandex
   }
+}
+
+# Разрешаем SSH от temp_bastion_sg на web-серверы
+resource "yandex_vpc_security_group_rule" "web_sg_ssh_temp_bastion" {
+  security_group_binding = module.security_groups.web_sg_id
+  direction              = "ingress"
+  protocol               = "TCP"
+  port                   = 22
+  security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
+}
+
+# Разрешаем SSH от temp_bastion_sg на Kibana
+resource "yandex_vpc_security_group_rule" "kibana_ssh_temp_bastion" {
+  security_group_binding = module.security_groups.kibana_sg_id
+  direction              = "ingress"
+  protocol               = "TCP"
+  port                   = 22
+  security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
+}
+
+# Разрешаем SSH от temp_bastion_sg на Elasticsearch
+resource "yandex_vpc_security_group_rule" "elasticsearch_ssh_temp_bastion" {
+  security_group_binding = module.security_groups.elasticsearch_sg_id
+  direction              = "ingress"
+  protocol               = "TCP"
+  port                   = 22
+  security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
+}
+
+# Разрешаем SSH от temp_bastion_sg на Zabbix
+resource "yandex_vpc_security_group_rule" "zabbix_ssh_temp_bastion" {
+  security_group_binding = module.security_groups.zabbix_sg_id
+  direction              = "ingress"
+  protocol               = "TCP"
+  port                   = 22
+  security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
 }
 
 resource "yandex_vpc_security_group_rule" "bastion_final_rule" {
