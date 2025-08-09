@@ -25,10 +25,16 @@ resource "yandex_vpc_security_group" "web_sg" {
     port              = 80
     security_group_id = yandex_vpc_security_group.alb_sg.id
   }
+  
+  ingress {
+  protocol          = "TCP"
+  port              = 22
+  security_group_id = yandex_vpc_security_group.bastion_sg.id
+  }
 
   egress {
     protocol       = "ANY"
-    v4_cidr_blocks = ["0.0.0.0/0"]
+    v4_cidr_blocks = ["0.0.0.0/0"] 
   }
 }
 
@@ -55,6 +61,13 @@ resource "yandex_vpc_security_group" "kibana" {
     port           = 5601
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
+
+  ingress {
+  protocol          = "TCP"
+  port              = 22
+  security_group_id = yandex_vpc_security_group.bastion_sg.id
+  }
+
   egress {
     protocol       = "ANY"
     v4_cidr_blocks = ["0.0.0.0/0"]
@@ -69,6 +82,13 @@ resource "yandex_vpc_security_group" "elasticsearch" {
     port           = 9200
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
+
+  ingress {
+  protocol          = "TCP"
+  port              = 22
+  security_group_id = yandex_vpc_security_group.bastion_sg.id
+  }
+
   egress {
     protocol       = "ANY"
     v4_cidr_blocks = ["0.0.0.0/0"]
@@ -87,6 +107,13 @@ resource "yandex_vpc_security_group" "zabbix_sg" {
   }
 
   ingress {
+  protocol          = "TCP"
+  port              = 22
+  security_group_id = yandex_vpc_security_group.bastion_sg.id
+  }
+
+
+  ingress {
     protocol = "tcp"
     description    = "Zabbix server port"
     port           = 10051
@@ -103,7 +130,7 @@ resource "yandex_vpc_security_group" "alb_sg" {
   name       = "alb-sg"
   network_id = var.network_id
 
-  # Клиентский трафик к ALB (если он внешний)
+  # HTTP/HTTPS для клиентов
   ingress {
     protocol       = "TCP"
     port           = 80
@@ -115,7 +142,7 @@ resource "yandex_vpc_security_group" "alb_sg" {
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # ОБЯЗАТЕЛЬНО: health-checks к ALB (те же порты, что listener'ы)
+  # Вход от подсетей статуса health‑check (можно оставить)
   ingress {
     protocol       = "TCP"
     port           = 80
@@ -127,7 +154,14 @@ resource "yandex_vpc_security_group" "alb_sg" {
     v4_cidr_blocks = ["198.18.235.0/24", "198.18.248.0/24"]
   }
 
-  # Исходящий трафик ALB
+  # Порт 30080 от внутренних health‑check узлов самого ALB
+  ingress {
+    protocol          = "TCP"
+    port              = 30080
+    predefined_target = "loadbalancer_healthchecks"
+  }
+
+  # Исходящий трафик
   egress {
     protocol       = "ANY"
     v4_cidr_blocks = ["0.0.0.0/0"]
