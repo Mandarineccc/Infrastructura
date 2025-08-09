@@ -58,9 +58,11 @@ resource "yandex_alb_virtual_host" "web_vhost" {
 }
 
 resource "yandex_alb_load_balancer" "web_alb" {
-  name               = "web-alb"
-  network_id         = var.network_id
-  security_group_ids = [var.web_sg]
+  name       = "web-alb"
+  network_id = var.network_id
+
+  # здесь указываем SG, созданную для ALB
+  security_group_ids = [var.alb_sg_id]
 
   allocation_policy {
     location {
@@ -77,14 +79,13 @@ resource "yandex_alb_load_balancer" "web_alb" {
       }
       ports = [80]
     }
-    
+
     http {
-    handler {
-      http_router_id = yandex_alb_http_router.web_router.id
+      handler {
+        http_router_id = yandex_alb_http_router.web_router.id
+      }
     }
   }
-}
-    
 
   depends_on = [
     yandex_alb_http_router.web_router,

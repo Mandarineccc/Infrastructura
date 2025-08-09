@@ -19,26 +19,16 @@ resource "yandex_vpc_security_group" "web_sg" {
   name       = "web-sg"
   network_id = var.network_id
 
-  # ALB Health Check — единственный правильный способ!
+  # Пускать трафик от ALB на порт приложения (пример: 80)
   ingress {
-    protocol          = "tcp"
+    protocol          = "TCP"
     port              = 80
-    predefined_target = "loadbalancer_healthchecks"
-    description       = "Allow ALB health checks"
-  }
-
-  # Разрешить доступ из интернета к веб-приложению (если нужно)
-  ingress {
-    protocol       = "tcp"
-    port           = 80
-    v4_cidr_blocks = ["0.0.0.0/0"]
-    description    = "Allow HTTP from anywhere"
+    security_group_id = yandex_vpc_security_group.alb_sg.id
   }
 
   egress {
     protocol       = "ANY"
     v4_cidr_blocks = ["0.0.0.0/0"]
-    description    = "Allow all outbound traffic"
   }
 }
 
@@ -103,6 +93,41 @@ resource "yandex_vpc_security_group" "zabbix_sg" {
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 
+  egress {
+    protocol       = "ANY"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "yandex_vpc_security_group" "alb_sg" {
+  name       = "alb-sg"
+  network_id = var.network_id
+
+  # Клиентский трафик к ALB (если он внешний)
+  ingress {
+    protocol       = "TCP"
+    port           = 80
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    protocol       = "TCP"
+    port           = 443
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # ОБЯЗАТЕЛЬНО: health-checks к ALB (те же порты, что listener'ы)
+  ingress {
+    protocol       = "TCP"
+    port           = 80
+    v4_cidr_blocks = ["198.18.235.0/24", "198.18.248.0/24"]
+  }
+  ingress {
+    protocol       = "TCP"
+    port           = 443
+    v4_cidr_blocks = ["198.18.235.0/24", "198.18.248.0/24"]
+  }
+
+  # Исходящий трафик ALB
   egress {
     protocol       = "ANY"
     v4_cidr_blocks = ["0.0.0.0/0"]

@@ -32,3 +32,8 @@ variable "private_subnet_b_id" {
   description = "ID приватной подсети B"
   type        = string
 }
+
+variable "alb_sg_id" {
+  description = "ID SG, используемой для ALB"
+  type        = string
+}

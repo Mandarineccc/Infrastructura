@@ -21,3 +21,8 @@ output "zabbix_sg_id" {
 output "nat_sg_id" {
   value = yandex_vpc_security_group.nat_sg.id
 }
+
+output "alb_sg_id" {
+  description = "ID security group для ALB"
+  value       = yandex_vpc_security_group.alb_sg.id
+}
