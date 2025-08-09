@@ -1,8 +1,9 @@
-- name: Установка Elasticsearch
-  hosts: elasticsearch
-  become: yes
+  tasks: 
+    - name: Remove duplicate Elastic repo file if present
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/artifacts_elastic_co_packages_7_x_apt.list
+        state: absent
 
-  tasks:
     - name: Ensure prerequisites for APT over HTTPS
       ansible.builtin.apt:
         name:
@@ -12,19 +13,21 @@
         state: present
         update_cache: yes
 
-    - name: Add Elastic GPG key to keyring
-      ansible.builtin.get_url:
-        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
-        dest: /usr/share/keyrings/elastic.gpg
+    - name: Install Elastic GPG key into keyring
+      ansible.builtin.shell: |
+        set -e
+        curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee /usr/share/keyrings/elastic.gpg >/dev/null
+      args:
+        creates: /usr/share/keyrings/elastic.gpg
+
+    - name: Configure Elastic 7.x repo via Yandex mirror with signed-by
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/elastic-7x.list
+        content: "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://mirror.yandex.ru/mirrors/elastic/7/ stable main\n"
+        owner: root
+        group: root
         mode: '0644'
-
-    - name: Add Elastic APT repository (7.x) with signed-by
-      ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main"
-        state: present
-        filename: elastic-7x
-        update_cache: no
-
+ 
     - name: Update apt cache (retry)
       ansible.builtin.apt:
         update_cache: yes
@@ -32,20 +35,14 @@
       retries: 5
       delay: 5
       until: apt_update_result is succeeded
-
-
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: yes
-
-    # ВАЖНО: без пинования версии!
+ 
     - name: Install Elasticsearch (latest 7.x)
       ansible.builtin.apt:
         name: elasticsearch
-        state: present 
+        state: present
 
     - name: Enable and start Elasticsearch
       ansible.builtin.systemd:
         name: elasticsearch
         enabled: yes
-        state: started 
+        state: started
