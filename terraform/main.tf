@@ -145,7 +145,6 @@ module "load_balancer" {
   }
 }
 
-
 module "zabbix_server" {
   source              = "./modules/zabbix_server"
   platform_id         = var.platform_id
