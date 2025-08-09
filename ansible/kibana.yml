@@ -1,22 +1,68 @@
 - name: Установка Kibana
   hosts: kibana
-  become: true
+  become: yes
+
+  vars:
+    elastic_repo: "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://mirror.yandex.ru/mirrors/elastic/7/ stable main"
+    elastic_keyring: /usr/share/keyrings/elastic.gpg
+    elasticsearch_url: "http://elasticsearch.ru-central1.internal:9200"
 
   tasks:
-    - name: Установка Kibana
-      apt:
-        name: kibana
+    - name: Remove duplicate Elastic repo file if present
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/artifacts_elastic_co_packages_7_x_apt.list
+        state: absent
+
+    - name: Ensure prerequisites for APT over HTTPS
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
         state: present
-        update_cache: true
+        update_cache: yes
 
-    - name: Копирование конфига Kibana
-      template:
-        src: kibana.yml.j2
-        dest: /etc/kibana/kibana.yml
-        mode: "0644"
+    - name: Install Elastic GPG key into keyring
+      ansible.builtin.shell: |
+        set -e
+        curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee {{ elastic_keyring }} >/dev/null
+      args:
+        creates: "{{ elastic_keyring }}"
 
-    - name: Включить и запустить Kibana
-      service:
+    - name: Configure Elastic 7.x repo via mirror with signed-by
+      ansible.builtin.apt_repository:
+        repo: "{{ elastic_repo }}"
+        state: present
+        filename: elastic-7x
+        update_cache: no
+
+    - name: Update apt cache (retry)
+      ansible.builtin.apt:
+        update_cache: yes
+      register: apt_update_result
+      retries: 5
+      delay: 5
+      until: apt_update_result is succeeded
+
+    - name: Install Kibana
+      ansible.builtin.apt:
         name: kibana
-        state: started
-        enabled: true
+        state: present 
+
+    - name: Configure kibana.yml
+      ansible.builtin.copy:
+        dest: /etc/kibana/kibana.yml
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          server.host: "0.0.0.0"
+          elasticsearch.hosts: ["{{ elasticsearch_url }}"]
+      notify: Restart kibana
+
+  handlers:
+    - name: Restart kibana
+      ansible.builtin.systemd:
+        name: kibana
+        enabled: yes
+        state: restarted
