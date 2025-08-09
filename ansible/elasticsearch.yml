@@ -23,6 +23,16 @@
         repo: "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main"
         state: present
         filename: elastic-7x
+        update_cache: no
+
+    - name: Update apt cache (retry)
+      ansible.builtin.apt:
+        update_cache: yes
+      register: apt_update_result
+      retries: 5
+      delay: 5
+      until: apt_update_result is succeeded
+
 
     - name: Update apt cache
       ansible.builtin.apt:
