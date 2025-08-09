@@ -1,25 +1,43 @@
-- name: Add Zabbix repo GPG key
-  ansible.builtin.apt_key:
-    url: https://repo.zabbix.com/zabbix-official-repo.key
-    state: present
+- name: Установка Zabbix сервера
+  hosts: zabbix
+  become: yes
 
-- name: Add Zabbix APT repository (6.0 LTS for Ubuntu 20.04 Focal)
-  ansible.builtin.apt_repository:
-    repo: "deb https://repo.zabbix.com/zabbix/6.0/ubuntu focal main"
-    state: present
-    filename: "zabbix"
+  vars:
+    zabbix_major_version: "6.0"   # LTS
+    zbx_codename: "focal"         # Ubuntu 20.04
 
-- name: Update apt cache
-  ansible.builtin.apt:
-    update_cache: yes
+  tasks:
+    - name: Установить базовые зависимости для репозиториев
+      ansible.builtin.apt:
+        name:
+          - gnupg
+          - ca-certificates
+          - apt-transport-https
+        state: present
+        update_cache: yes
 
-- name: Install Zabbix server and web frontend (Apache)
-  ansible.builtin.apt:
-    name:
-      - zabbix-server-mysql
-      - zabbix-frontend-php
-      - zabbix-apache-conf
-      - zabbix-sql-scripts
-      - zabbix-agent
-      - mysql-client
-    state: present
+    - name: Добавить GPG-ключ репозитория Zabbix
+      ansible.builtin.apt_key:
+        url: https://repo.zabbix.com/zabbix-official-repo.key
+        state: present
+
+    - name: Подключить репозиторий Zabbix
+      ansible.builtin.apt_repository:
+        repo: "deb https://repo.zabbix.com/zabbix/{{ zabbix_major_version }}/ubuntu {{ zbx_codename }} main"
+        state: present
+        filename: zabbix
+
+    - name: Обновить cache apt после добавления репозитория
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Установить Zabbix server + web (Apache) и агент
+      ansible.builtin.apt:
+        name:
+          - zabbix-server-mysql
+          - zabbix-frontend-php
+          - zabbix-apache-conf
+          - zabbix-sql-scripts
+          - zabbix-agent
+          - mysql-client
+        state: present
