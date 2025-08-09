@@ -128,7 +128,7 @@ module "web_servers" {
 }
 
 module "load_balancer" {
-  source = "./modules/load_balancer"
+  source    = "./modules/load_balancer"
   target_ips = [
     module.web_servers.web_server_1_ip,
     module.web_servers.web_server_2_ip
@@ -139,10 +139,12 @@ module "load_balancer" {
   web_sg              = module.security_groups.web_sg_id
   private_subnet_a_id = module.subnets.private_subnet_a_id
   private_subnet_b_id = module.subnets.private_subnet_b_id
+  alb_sg_id           = module.security_groups.alb_sg_id   # ← новая строка
   providers = {
     yandex = yandex
   }
 }
+
 
 module "zabbix_server" {
   source              = "./modules/zabbix_server"
