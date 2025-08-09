@@ -1,6 +1,9 @@
 output "alb_ip" {
   description = "Public IPv4 address of the ALB"
-  value       = yandex_alb_load_balancer.web_alb.listener[0].endpoint[0].address[0].external_ipv4_address[0].address
+  value       = try(
+    yandex_alb_load_balancer.web_alb.listener[0].endpoint[0].address[0].external_ipv4_address[0].address,
+    null
+  )
 }
 
 output "target_group_id" {
