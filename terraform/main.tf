@@ -39,7 +39,7 @@ module "bastion" {
   subnet_id           = module.subnets.public_subnet_id
   zone                = "ru-central1-a"
   image_id            = "fd8oqjs5ram7b6higj34"
-  sg_id               = module.security_groups.bastion_sg_id
+  sg_id               = yandex_vpc_security_group.temp_bastion_sg.id
   ssh_public_key_path = var.ssh_public_key_path
   providers = {
     yandex = yandex
