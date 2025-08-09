@@ -1,34 +1,41 @@
 - name: Установка Elasticsearch
   hosts: elasticsearch
-  become: true
+  become: yes
 
   tasks:
-    - name: Установка зависимостей
-      apt:
+    - name: Ensure prerequisites for APT over HTTPS
+      ansible.builtin.apt:
         name:
           - apt-transport-https
-          - openjdk-11-jdk
+          - ca-certificates
+          - gnupg
         state: present
-        update_cache: true
+        update_cache: yes
 
-    - name: Добавление GPG-ключа Elastic
-      apt_key:
+    - name: Add Elastic GPG key to keyring
+      ansible.builtin.get_url:
         url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
-        state: present
+        dest: /usr/share/keyrings/elastic.gpg
+        mode: '0644'
 
-    - name: Добавление репозитория Elasticsearch
-      apt_repository:
-        repo: 'deb https://artifacts.elastic.co/packages/7.x/apt stable main'
+    - name: Add Elastic APT repository (7.x) with signed-by
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main"
         state: present
+        filename: elastic-7x
 
-    - name: Установка Elasticsearch
-      apt:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    # ВАЖНО: без пинования версии!
+    - name: Install Elasticsearch (latest 7.x)
+      ansible.builtin.apt:
         name: elasticsearch
-        state: present
-        update_cache: true
+        state: present 
 
-    - name: Включение и запуск Elasticsearch
-      service:
+    - name: Enable and start Elasticsearch
+      ansible.builtin.systemd:
         name: elasticsearch
-        state: started
-        enabled: true
+        enabled: yes
+        state: started 
