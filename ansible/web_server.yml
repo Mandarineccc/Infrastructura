@@ -38,8 +38,16 @@
         path: /var/www/html/index.nginx-debian.html
         state: absent
 
-    # === Сниппет со stub_status ===
-    - name: Создать snippet nginx_status.conf
+        # 1) Удаляем старый inline-блок, если был
+    - name: Remove old inline stub_status block (if present)
+      ansible.builtin.blockinfile:
+        path: /etc/nginx/sites-available/default
+        marker: "# {mark} managed by ansible (stub_status)"
+        state: absent
+      notify: Reload nginx
+
+    # 2) Создаём сниппет с /nginx_status
+    - name: Create snippet nginx_status.conf
       ansible.builtin.copy:
         dest: /etc/nginx/snippets/nginx_status.conf
         owner: root
@@ -47,25 +55,24 @@
         mode: '0644'
         content: |
           location /nginx_status {
-              stub_status on;
-              # Разрешаем с localhost и всей VPC
+              stub_status on; 
               allow 127.0.0.1;
               allow 10.0.0.0/8;
               deny all;
           }
       notify: Reload nginx
 
-    # Включаем snippet внутри первого server{} default-сайта
-    - name: Подключить snippet в default server{}
-      ansible.builtin.blockinfile:
+    # 3) Гарантируем единственную include-строку внутри server{}
+    - name: Include snippet inside default server{}
+      ansible.builtin.lineinfile:
         path: /etc/nginx/sites-available/default
-        marker: "# {mark} managed by ansible (include nginx_status)"
-        insertbefore: '^\s*}\s*$'   # перед закрывающей } сервера
-        block: |
-          include snippets/nginx_status.conf;
+        regexp: '^\s*include\s+snippets/nginx_status\.conf;'
+        line: '    include snippets/nginx_status.conf;'
+        insertafter: '^\s*server\s*\{'
       notify: Reload nginx
 
-    - name: Проверить конфиг nginx
+    # 4) Проверяем конфиг
+    - name: Test nginx config
       ansible.builtin.command: nginx -t
       register: nginx_test
       changed_when: false
