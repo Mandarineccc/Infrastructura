@@ -8,8 +8,7 @@
         name: nginx
         state: present
         update_cache: yes
-
-    # === Кастомный index.html с именем хоста ===
+ 
     - name: Убедиться, что директория /var/www/html существует
       ansible.builtin.file:
         path: /var/www/html
@@ -38,8 +37,8 @@
       ansible.builtin.file:
         path: /var/www/html/index.nginx-debian.html
         state: absent
-        
-        # === ВКЛЮЧАЕМ stub_status ===
+
+    # === ВКЛЮЧАЕМ stub_status ===
     - name: Включить stub_status в Nginx (локация /nginx_status)
       ansible.builtin.blockinfile:
         path: /etc/nginx/sites-available/default
@@ -53,8 +52,9 @@
           }
       notify: Restart nginx
 
-    - name: Обеспечить автозапуск и запуск nginx
+  handlers:
+    - name: Restart nginx
       ansible.builtin.systemd:
-        name: nginx
-        enabled: yes
+        name: nginx 
         state: restarted
+        enabled: yes
