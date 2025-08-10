@@ -1,33 +1,79 @@
 - name: Установка Filebeat
   hosts: webservers
-  become: true
+  become: yes
+
+  vars:
+    elastic_repo: "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://mirror.yandex.ru/mirrors/elastic/7/ stable main"
+    elastic_keyring: /usr/share/keyrings/elastic.gpg
+    elasticsearch_host: "elasticsearch.ru-central1.internal:9200"
 
   tasks:
-    - name: Установка GPG-ключа Elastic
-      apt_key:
-        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
-        state: present
+    - name: Remove duplicate Elastic repo file if present
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/artifacts_elastic_co_packages_7_x_apt.list
+        state: absent
 
-    - name: Добавление репозитория Elastic
-      apt_repository:
-        repo: 'deb https://artifacts.elastic.co/packages/7.x/apt stable main'
+    - name: Ensure prerequisites for APT over HTTPS
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
         state: present
+        update_cache: yes
 
-    - name: Установка Filebeat
-      apt:
+    - name: Install Elastic GPG key into keyring
+      ansible.builtin.shell: |
+        set -e
+        curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee {{ elastic_keyring }} >/dev/null
+      args:
+        creates: "{{ elastic_keyring }}"
+
+    - name: Configure Elastic 7.x repo via mirror with signed-by
+      ansible.builtin.apt_repository:
+        repo: "{{ elastic_repo }}"
+        state: present
+        filename: elastic-7x
+        update_cache: no
+
+    - name: Update apt cache (retry)
+      ansible.builtin.apt:
+        update_cache: yes
+      register: apt_update_result
+      retries: 5
+      delay: 5
+      until: apt_update_result is succeeded
+
+    - name: Install Filebeat (latest 7.x)
+      ansible.builtin.apt:
         name: filebeat
-        state: present
-        update_cache: true
+        state: present 
 
-    - name: Копирование конфига Filebeat
-      template:
-        src: filebeat.yml.j2
+    - name: Enable nginx module in Filebeat
+      ansible.builtin.command: filebeat modules enable nginx
+      args:
+        creates: /etc/filebeat/modules.d/nginx.yml
+
+    - name: Configure filebeat.yml
+      ansible.builtin.copy:
         dest: /etc/filebeat/filebeat.yml
-        mode: "0644"
-      notify: Перезапуск Filebeat
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          filebeat.inputs: []
+          filebeat.config.modules:
+            path: ${path.config}/modules.d/*.yml
+            reload.enabled: false
 
-  handlers:
-    - name: Перезапуск Filebeat
-      service:
+          output.elasticsearch:
+            hosts: ["{{ elasticsearch_host }}"]
+
+          setup.kibana:
+            host: "kibana-server.ru-central1.internal:5601"
+
+    - name: Ensure Filebeat enabled and started
+      ansible.builtin.systemd:
         name: filebeat
+        enabled: yes
         state: restarted
