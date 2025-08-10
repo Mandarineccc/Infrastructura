@@ -1,4 +1,4 @@
-- name: Установка Filebeat
+- name: Установка и настройка Filebeat
   hosts: webservers
   become: yes
 
@@ -6,6 +6,7 @@
     elastic_repo: "deb [signed-by=/usr/share/keyrings/elastic.gpg] https://mirror.yandex.ru/mirrors/elastic/7/ stable main"
     elastic_keyring: /usr/share/keyrings/elastic.gpg
     elasticsearch_host: "elasticsearch.ru-central1.internal:9200"
+    kibana_host: "kibana-server.ru-central1.internal:5601"
 
   tasks:
     - name: Remove duplicate Elastic repo file if present
@@ -47,13 +48,9 @@
     - name: Install Filebeat (latest 7.x)
       ansible.builtin.apt:
         name: filebeat
-        state: present 
+        state: present
 
-    - name: Enable nginx module in Filebeat
-      ansible.builtin.command: filebeat modules enable nginx
-      args:
-        creates: /etc/filebeat/modules.d/nginx.yml
-
+    # ← ВАЖНО: сначала кладём конфиг, чтобы появилось filebeat.config.modules.path
     - name: Configure filebeat.yml
       ansible.builtin.copy:
         dest: /etc/filebeat/filebeat.yml
@@ -70,7 +67,13 @@
             hosts: ["{{ elasticsearch_host }}"]
 
           setup.kibana:
-            host: "kibana-server.ru-central1.internal:5601"
+            host: "{{ kibana_host }}"
+
+    # ← Теперь можно включать модуль nginx — путь уже известен
+    - name: Enable nginx module in Filebeat (after config present)
+      ansible.builtin.command: filebeat modules enable nginx
+      args:
+        creates: /etc/filebeat/modules.d/nginx.yml
 
     - name: Ensure Filebeat enabled and started
       ansible.builtin.systemd:
