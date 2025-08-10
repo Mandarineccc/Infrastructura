@@ -1,22 +1,46 @@
 - name: Установка и настройка nginx
   hosts: webservers
-  become: true
+  become: yes
 
   tasks:
-    - name: Установка nginx
-      apt:
+    - name: Установить nginx
+      ansible.builtin.apt:
         name: nginx
         state: present
-        update_cache: true
+        update_cache: yes
 
-    - name: Копировать статические файлы сайта
-      copy:
-        src: my_static_site/
-        dest: /var/www/html/
-        mode: "0644"
+    # === Кастомный index.html с именем хоста ===
+    - name: Убедиться, что директория /var/www/html существует
+      ansible.builtin.file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Положить кастомный index.html (с hostname)
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+        content: |
+          <!doctype html>
+          <html>
+          <head><meta charset="utf-8"><title>My Site</title></head>
+          <body style="font-family: sans-serif">
+            <h1>It works 🎉</h1>
+            <p>Served by: <b>{{ ansible_hostname }}</b></p>
+          </body>
+          </html>
+
+    - name: Удалить дефолтную страницу Debian (если есть)
+      ansible.builtin.file:
+        path: /var/www/html/index.nginx-debian.html
+        state: absent
 
     - name: Обеспечить автозапуск и запуск nginx
-      service:
+      ansible.builtin.systemd:
         name: nginx
-        enabled: true
-        state: started
+        enabled: yes
+        state: restarted
