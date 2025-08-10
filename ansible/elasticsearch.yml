@@ -1,4 +1,8 @@
-  tasks: 
+- name: Установка Elasticsearch
+  hosts: elasticsearch
+  become: yes
+
+  tasks:
     - name: Remove duplicate Elastic repo file if present
       ansible.builtin.file:
         path: /etc/apt/sources.list.d/artifacts_elastic_co_packages_7_x_apt.list
@@ -27,7 +31,7 @@
         owner: root
         group: root
         mode: '0644'
- 
+
     - name: Update apt cache (retry)
       ansible.builtin.apt:
         update_cache: yes
@@ -35,11 +39,28 @@
       retries: 5
       delay: 5
       until: apt_update_result is succeeded
- 
+
     - name: Install Elasticsearch (latest 7.x)
       ansible.builtin.apt:
         name: elasticsearch
         state: present
+
+    - name: Ensure elasticsearch.yml binds to all interfaces
+      become: yes
+      ansible.builtin.blockinfile:
+        path: /etc/elasticsearch/elasticsearch.yml
+        marker: "# {mark} managed by ansible (network)"
+        block: |
+          network.host: 0.0.0.0
+          discovery.type: single-node
+
+    - name: Restart Elasticsearch to apply network settings
+      become: yes
+      ansible.builtin.systemd:
+        name: elasticsearch
+        enabled: yes
+        state: restarted
+
 
     - name: Enable and start Elasticsearch
       ansible.builtin.systemd:
