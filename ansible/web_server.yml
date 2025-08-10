@@ -8,7 +8,7 @@
         name: nginx
         state: present
         update_cache: yes
- 
+
     - name: Убедиться, что директория /var/www/html существует
       ansible.builtin.file:
         path: /var/www/html
@@ -38,23 +38,42 @@
         path: /var/www/html/index.nginx-debian.html
         state: absent
 
-    # === ВКЛЮЧАЕМ stub_status ===
-    - name: Включить stub_status в Nginx (локация /nginx_status)
-      ansible.builtin.blockinfile:
-        path: /etc/nginx/sites-available/default
-        marker: "# {mark} managed by ansible (stub_status)"
-        insertafter: '^\s*server\s*\{'
-        block: |
+    # === Сниппет со stub_status ===
+    - name: Создать snippet nginx_status.conf
+      ansible.builtin.copy:
+        dest: /etc/nginx/snippets/nginx_status.conf
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
           location /nginx_status {
               stub_status on;
+              # Разрешаем с localhost и всей VPC
+              allow 127.0.0.1;
               allow 10.0.0.0/8;
               deny all;
           }
-      notify: Restart nginx
+      notify: Reload nginx
+
+    # Включаем snippet внутри первого server{} default-сайта
+    - name: Подключить snippet в default server{}
+      ansible.builtin.blockinfile:
+        path: /etc/nginx/sites-available/default
+        marker: "# {mark} managed by ansible (include nginx_status)"
+        insertbefore: '^\s*}\s*$'   # перед закрывающей } сервера
+        block: |
+          include snippets/nginx_status.conf;
+      notify: Reload nginx
+
+    - name: Проверить конфиг nginx
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+      failed_when: nginx_test.rc != 0
 
   handlers:
-    - name: Restart nginx
+    - name: Reload nginx
       ansible.builtin.systemd:
-        name: nginx 
-        state: restarted
+        name: nginx
+        state: reloaded
         enabled: yes
