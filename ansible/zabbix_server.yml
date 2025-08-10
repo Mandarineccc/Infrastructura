@@ -3,8 +3,11 @@
   become: yes
 
   vars:
-    zabbix_major_version: "6.0"   # LTS
-    zbx_codename: "focal"         # Ubuntu 20.04
+    zabbix_major_version: "6.0"          # LTS
+    zbx_codename: "focal"                # Ubuntu 20.04
+    zabbix_db_name: zabbix
+    zabbix_db_user: zabbix
+    zabbix_db_password: "ZabbixP@ssw0rd!"   # ← Можешь сменить. Запомни — это и есть пароль для мастера.
 
   tasks:
     - name: Установить базовые зависимости для репозиториев
@@ -41,3 +44,81 @@
           - zabbix-agent
           - mysql-client
         state: present
+
+    # === УСТАНАВЛИВАЕМ MARIADB (MYSQL) НА ЭТОЙ ЖЕ ВМ ===
+    - name: Установить MariaDB сервер и зависимости для модулей MySQL
+      ansible.builtin.apt:
+        name:
+          - mariadb-server
+          - python3-pymysql
+        state: present
+
+    - name: Убедиться что MariaDB запущена и в автозапуске
+      ansible.builtin.systemd:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    # === СОЗДАНИЕ БАЗЫ И ПОЛЬЗОВАТЕЛЯ ZABBIX ===
+    - name: Создать БД для Zabbix
+      community.mysql.mysql_db:
+        name: "{{ zabbix_db_name }}"
+        state: present
+        encoding: utf8mb4
+        collation: utf8mb4_bin
+
+    - name: Создать пользователя Zabbix с правами на БД
+      community.mysql.mysql_user:
+        name: "{{ zabbix_db_user }}"
+        password: "{{ zabbix_db_password }}"
+        host: "localhost"
+        priv: "{{ zabbix_db_name }}.*:ALL"
+        state: present
+
+    # === ИМПОРТ СХЕМЫ ZABBIX (однократно) ===
+    - name: Проверить, импортирована ли схема (таблица users существует?)
+      community.mysql.mysql_info:
+        filter:
+          - databases
+      register: mysql_info
+
+    - name: Импортировать схему Zabbix, если таблиц еще нет
+      ansible.builtin.command: >
+        bash -lc "zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql -u{{ zabbix_db_user }} -p'{{ zabbix_db_password }}' {{ zabbix_db_name }}"
+      args:
+        creates: /var/lib/mysql/{{ zabbix_db_name }}/users.frm
+      changed_when: true
+
+    # === НАСТРОЙКИ СЕРВЕРА ZABBIX ===
+    - name: Прописать DBName/DBUser/DBPassword в /etc/zabbix/zabbix_server.conf
+      ansible.builtin.lineinfile:
+        path: /etc/zabbix/zabbix_server.conf
+        regexp: '^#?\s*{{ item.key }}='
+        line: "{{ item.key }}={{ item.val }}"
+      loop:
+        - { key: 'DBName',     val: '{{ zabbix_db_name }}' }
+        - { key: 'DBUser',     val: '{{ zabbix_db_user }}' }
+        - { key: 'DBPassword', val: '{{ zabbix_db_password }}' }
+      notify: Restart zabbix-server
+
+    # === ВРЕМЕННАЯ ЗОНА ДЛЯ PHP/Apache (иначе ругается фронт) ===
+    - name: Установить таймзону в /etc/zabbix/apache.conf
+      ansible.builtin.lineinfile:
+        path: /etc/zabbix/apache.conf
+        regexp: '^#?\s*php_value\s+date.timezone'
+        line: 'php_value date.timezone Europe/Amsterdam'
+        create: yes
+      notify: Reload apache
+
+  handlers:
+    - name: Restart zabbix-server
+      ansible.builtin.systemd:
+        name: zabbix-server
+        state: restarted
+        enabled: yes
+
+    - name: Reload apache
+      ansible.builtin.systemd:
+        name: apache2
+        state: reloaded
+        enabled: yes
