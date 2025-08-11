@@ -167,7 +167,6 @@
           $IMAGE_FORMAT_DEFAULT = IMAGE_FORMAT_PNG;
       notify: Reload apache
 
-
   handlers:
     - name: Restart zabbix-server
       ansible.builtin.systemd:

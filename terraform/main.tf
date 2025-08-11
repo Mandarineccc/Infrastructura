@@ -1,18 +1,14 @@
 module "vpc" {
   source       = "./modules/vpc"
   network_name = "my-network"
-  providers = {
-    yandex = yandex
-  }
+  providers = { yandex = yandex }
 }
 
 module "nat_gateway" {
   source     = "./modules/nat_gateway"
   network_id = module.vpc.network_id
   prefix     = "prod"
-  providers = {
-    yandex = yandex
-  }
+  providers  = { yandex = yandex }
 }
 
 module "subnets" {
@@ -28,9 +24,7 @@ module "subnets" {
   private_cidr_b = "10.0.2.0/24"
   public_cidr    = "10.0.3.0/24"
 
-  providers = {
-    yandex = yandex
-  }
+  providers = { yandex = yandex }
 }
 
 module "bastion" {
@@ -41,19 +35,25 @@ module "bastion" {
   image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = yandex_vpc_security_group.temp_bastion_sg.id
   ssh_public_key_path = var.ssh_public_key_path
-  providers = {
-    yandex = yandex
-  }
+  providers           = { yandex = yandex }
 }
 
+# Временная SG для бастиона — SSH снаружи, egress любой
 resource "yandex_vpc_security_group" "temp_bastion_sg" {
   name       = "temp-bastion-sg"
   network_id = module.vpc.network_id
 
   ingress {
-    protocol = "TCP"
+    protocol       = "TCP"
     port           = 22
     v4_cidr_blocks = ["0.0.0.0/0"]
+    description    = "SSH to bastion"
+  }
+
+  egress {
+    protocol       = "ANY"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    description    = "Bastion egress"
   }
 }
 
@@ -63,62 +63,82 @@ module "security_groups" {
   bastion_ip     = module.bastion.bastion_public_ip
   private_cidr_a = module.subnets.private_cidr_a
   private_cidr_b = module.subnets.private_cidr_b
-  providers = {
-    yandex = yandex
-  }
+  providers      = { yandex = yandex }
 }
 
-# Разрешаем SSH от temp_bastion_sg на web-серверы
+# SSH с бастиона (по SG) на приватные ВМ
 resource "yandex_vpc_security_group_rule" "web_sg_ssh_temp_bastion" {
   security_group_binding = module.security_groups.web_sg_id
   direction              = "ingress"
   protocol               = "TCP"
   port                   = 22
   security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
+  description            = "SSH from bastion SG to web"
 }
 
-# Разрешаем SSH от temp_bastion_sg на Kibana
 resource "yandex_vpc_security_group_rule" "kibana_ssh_temp_bastion" {
   security_group_binding = module.security_groups.kibana_sg_id
   direction              = "ingress"
   protocol               = "TCP"
   port                   = 22
   security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
+  description            = "SSH from bastion SG to kibana"
 }
 
-# Разрешаем SSH от temp_bastion_sg на Elasticsearch
 resource "yandex_vpc_security_group_rule" "elasticsearch_ssh_temp_bastion" {
   security_group_binding = module.security_groups.elasticsearch_sg_id
   direction              = "ingress"
   protocol               = "TCP"
   port                   = 22
   security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
+  description            = "SSH from bastion SG to elasticsearch"
 }
 
-# Разрешаем SSH от temp_bastion_sg на Zabbix
 resource "yandex_vpc_security_group_rule" "zabbix_ssh_temp_bastion" {
   security_group_binding = module.security_groups.zabbix_sg_id
   direction              = "ingress"
   protocol               = "TCP"
   port                   = 22
   security_group_id      = yandex_vpc_security_group.temp_bastion_sg.id
+  description            = "SSH from bastion SG to zabbix"
 }
 
-resource "yandex_vpc_security_group_rule" "bastion_final_rule" {
-  security_group_binding = module.security_groups.bastion_sg_id
+# Zabbix-сервер -> агенты (tcp/10050) по SG (НЕ по CIDR)
+resource "yandex_vpc_security_group_rule" "web_allow_zabbix_agent" {
+  security_group_binding = module.security_groups.web_sg_id
   direction              = "ingress"
-  port                   = 22
-  protocol = "TCP"
-  v4_cidr_blocks         = ["${module.bastion.bastion_public_ip}/32"]
+  protocol               = "TCP"
+  port                   = 10050
+  security_group_id      = module.security_groups.zabbix_sg_id
+  description            = "allow zabbix->web agents tcp/10050"
 }
 
-#resource "null_resource" "cleanup_temp_sg" {
-#   depends_on = [module.security_groups]
+resource "yandex_vpc_security_group_rule" "kibana_allow_zabbix_agent" {
+  security_group_binding = module.security_groups.kibana_sg_id
+  direction              = "ingress"
+  protocol               = "TCP"
+  port                   = 10050
+  security_group_id      = module.security_groups.zabbix_sg_id
+  description            = "allow zabbix->kibana agent tcp/10050"
+}
 
-#  provisioner "local-exec" {
-#    command = "yc vpc security-group delete ${yandex_vpc_security_group.temp_bastion_sg.id}"
-#  }
-#}
+resource "yandex_vpc_security_group_rule" "es_allow_zabbix_agent" {
+  security_group_binding = module.security_groups.elasticsearch_sg_id
+  direction              = "ingress"
+  protocol               = "TCP"
+  port                   = 10050
+  security_group_id      = module.security_groups.zabbix_sg_id
+  description            = "allow zabbix->elasticsearch agent tcp/10050"
+}
+
+# Egress для Zabbix (чтоб он мог ходить к агентам)
+resource "yandex_vpc_security_group_rule" "zbx_egress_any" {
+  security_group_binding = module.security_groups.zabbix_sg_id
+  direction              = "egress"
+  protocol               = "ANY"
+  v4_cidr_blocks         = ["0.0.0.0/0"]
+  description            = "egress from zabbix"
+}
 
 module "kibana" {
   source              = "./modules/kibana"
@@ -128,9 +148,7 @@ module "kibana" {
   image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = module.security_groups.kibana_sg_id
   ssh_public_key_path = var.ssh_public_key_path
-  providers = {
-    yandex = yandex
-  }
+  providers           = { yandex = yandex }
 }
 
 module "elasticsearch" {
@@ -141,16 +159,14 @@ module "elasticsearch" {
   image_id            = "fd8oqjs5ram7b6higj34"
   sg_id               = module.security_groups.elasticsearch_sg_id
   ssh_public_key_path = var.ssh_public_key_path
-  providers = {
-    yandex = yandex
-  }
+  providers           = { yandex = yandex }
 }
 
 module "web_servers" {
   source      = "./modules/web_servers"
   platform_id = var.platform_id
   subnet_ids = {
-    zone_1 = module.subnets.private_subnet_a_id,
+    zone_1 = module.subnets.private_subnet_a_id
     zone_2 = module.subnets.private_subnet_b_id
   }
   image_id            = "fd8oqjs5ram7b6higj34"
@@ -158,13 +174,11 @@ module "web_servers" {
   zone_1              = var.zone_1
   zone_2              = var.zone_2
   ssh_public_key_path = var.ssh_public_key_path
-  providers = {
-    yandex = yandex
-  }
+  providers           = { yandex = yandex }
 }
 
 module "load_balancer" {
-  source    = "./modules/load_balancer"
+  source     = "./modules/load_balancer"
   target_ips = [
     module.web_servers.web_server_1_ip,
     module.web_servers.web_server_2_ip
@@ -175,10 +189,8 @@ module "load_balancer" {
   web_sg              = module.security_groups.web_sg_id
   private_subnet_a_id = module.subnets.private_subnet_a_id
   private_subnet_b_id = module.subnets.private_subnet_b_id
-  alb_sg_id           = module.security_groups.alb_sg_id   # ← новая строка
-  providers = {
-    yandex = yandex
-  }
+  alb_sg_id           = module.security_groups.alb_sg_id
+  providers           = { yandex = yandex }
 }
 
 module "zabbix_server" {
@@ -189,9 +201,7 @@ module "zabbix_server" {
   subnet_id           = module.subnets.public_subnet_id
   sg_id               = module.security_groups.zabbix_sg_id
   ssh_public_key_path = var.ssh_public_key_path
-  providers = {
-    yandex = yandex
-  }
+  providers           = { yandex = yandex }
 }
 
 module "snapshot_bastion" {
@@ -234,4 +244,4 @@ module "snapshot_zabbix" {
   schedule_name = "zabbix-snapshot"
   disk_ids      = [module.zabbix_server.disk_id]
   instance_name = "zabbix"
-}
+} 
