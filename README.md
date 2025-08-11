@@ -13,7 +13,7 @@ zabbix    89.169.132.9   Admin zabbix
 kibana http://89.169.129.162:5601 
 ALB  http://84.201.170.31
 
-[https://github.com/Mandarineccc/Infrastructura/blob/main/Снимок%20экрана%202025-08-11%20044631.png]
+(https://github.com/Mandarineccc/Infrastructura/blob/main/Снимок%20экрана%202025-08-11%20044631.png)
 [()]
 [()]
 [()]
